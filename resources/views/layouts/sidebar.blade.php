@@ -53,8 +53,8 @@
             </span>
           </a>
           <ul class="treeview-menu">
-            <li><a href="#"><i class="fa fa-circle-o"></i> Counselor Directory</a></li>
-            <li><a href="#"><i class="fa fa-circle-o"></i> Assignment Logs</a></li>
+            <li><a href={{ route('counsillors.index') }}><i class="fa fa-circle-o"></i> Counselor Directory</a></li>
+            <li><a href={{ route('counsillor_log') }}><i class="fa fa-circle-o"></i> Assignment Logs</a></li>
           </ul>
         </li>
 
