@@ -9,3 +9,28 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.shadow-clay {
+    @apply shadow-[8px_8px_16px_#d1d9e6,inset_-8px_-8px_12px_#ffffff,inset_8px_8px_12px_#d1d9e6];
+}
+
+/* Hide scrollbar for clean clay look */
+.custom-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.custom-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@keyframes pop-in {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-pop-in {
+    animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}

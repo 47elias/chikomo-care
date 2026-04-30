@@ -13,6 +13,12 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    // config/services.php
+
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'url' => env('GROQ_API_URL'), // Now this won't be null
+    ],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
