@@ -46,4 +46,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    // app/Models/User.php
+    public function counselor()
+    {
+        return $this->hasOne(Counselor::class);
+    }
 }

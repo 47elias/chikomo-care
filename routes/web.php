@@ -20,11 +20,10 @@ Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('dashboard', function () { return view('admin.dashboard'); })->middleware('auth')->name('dashboard');
 Route::get('analytics', function(){ return view('admin.analytics'); })->middleware('auth')->name('analytics');
-Route::get('/counsillors', function () {
-    // Fetch all counselors from the database with their linked user details
-    $counselors = Counselor::with('user')->get();
-    // Pass the variable to the view
-    return view('admin.counsillor_directory', compact('counselors'));
-})->name('counsillors.index')->middleware(['web', 'auth']);
+Route::get('/counsillors', function () { $counselors = Counselor::with('user')->get(); return view('admin.counsillor_directory', compact('counselors'));})->name('counsillors.index')->middleware(['web', 'auth']);
+Route::post('/counselors/store', [CounselorController::class, 'store'])->name('counselors.store');
 Route::get('/counsillors', [CounselorController::class, 'index'])->name('counsillors.index')->middleware('auth');
-Route::get('counsillor_log', function() { return view('admin.counsillor_log'); })->middleware('auth')->name('counsillor_log');
+Route::get('/counsillor_log', [CounselorController::class, 'assignmentLogs'])->name('counsillor_log');
+Route::patch('/counselors/{id}/toggle-status', [CounselorController::class, 'toggleStatus'])->name('counselors.toggle-status');
+Route::put('/counselors/{id}', [CounselorController::class, 'update'])->name('counselors.update');
+Route::delete('/counselors/{id}', [CounselorController::class, 'destroy'])->name('counselors.destroy');
