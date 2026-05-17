@@ -199,3 +199,4 @@ const Sidebar = ({ isOpen, toggleSidebar, alias, token, onSelectConversation }) 
 };
 
 export default Sidebar;
+ 
