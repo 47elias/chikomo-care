@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\CounselorController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AnonymousController;
+use App\Http\Controllers\AnalyticsController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
 
@@ -20,7 +22,6 @@ Route::post('login', [LoginController::class, 'authenticate'])->name('login');
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('dashboard', function () { return view('admin.dashboard'); })->middleware('auth')->name('dashboard');
-Route::get('analytics', function(){ return view('admin.analytics'); })->middleware('auth')->name('analytics');
 Route::get('/counsillors', function () { $counselors = Counselor::with('user')->get(); return view('admin.counsillor_directory', compact('counselors'));})->name('counsillors.index')->middleware(['web', 'auth']);
 Route::post('/counselors/store', [CounselorController::class, 'store'])->name('counselors.store');
 Route::get('/counsillors', [CounselorController::class, 'index'])->name('counsillors.index')->middleware('auth');
@@ -37,10 +38,21 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.users.destroy');
     // Status Toggling Switch Engine Route Configuration
     Route::patch('/admin/users/{id}/toggle', [App\Http\Controllers\UserController::class, 'toggleStatus'])->name('admin.users.toggle');
-});
-Route::middleware(['auth'])->group(function () {
 
-    // Universal Account Settings Core Pages
+    // Profile management routes
     Route::get('/settings', [ProfileController::class, 'edit'])->name('settings.edit');
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+});
+
+Route::middleware(['web', 'auth'])->group(function () {
+    // FIX: Replaced the route closure callback with an explicit link to your Controller class method
+    Route::get('/anonymous', [AnonymousController::class, 'index'])->name('anonymous.index');
+});
+Route::middleware(['web'])->group(function () {
+
+    // UPDATED ROUTE: Connected directly to AnalyticsController to feed real table data to your graphs
+   Route::get('analytics', [AnalyticsController::class, 'index'])
+    ->middleware('auth')
+    ->name('analytics');
+
 });
