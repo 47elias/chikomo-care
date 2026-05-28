@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\CounselorController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
 
@@ -34,7 +35,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/users', [App\Http\Controllers\UserController::class, 'store'])->name('admin.users.store');
     Route::put('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'update'])->name('admin.users.update');
     Route::delete('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.users.destroy');
-
     // Status Toggling Switch Engine Route Configuration
     Route::patch('/admin/users/{id}/toggle', [App\Http\Controllers\UserController::class, 'toggleStatus'])->name('admin.users.toggle');
+});
+Route::middleware(['auth'])->group(function () {
+
+    // Universal Account Settings Core Pages
+    Route::get('/settings', [ProfileController::class, 'edit'])->name('settings.edit');
+    Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
 });

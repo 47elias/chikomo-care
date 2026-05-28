@@ -76,7 +76,7 @@
 
         {{-- Settings --}}
         <li>
-          <a href="#">
+          <a href="settings">
             <i class="fa fa-gears"></i> <span>Settings</span>
           </a>
         </li>
