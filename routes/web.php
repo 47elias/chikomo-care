@@ -27,3 +27,12 @@ Route::get('/counsillor_log', [CounselorController::class, 'assignmentLogs'])->n
 Route::patch('/counselors/{id}/toggle-status', [CounselorController::class, 'toggleStatus'])->name('counselors.toggle-status');
 Route::put('/counselors/{id}', [CounselorController::class, 'update'])->name('counselors.update');
 Route::delete('/counselors/{id}', [CounselorController::class, 'destroy'])->name('counselors.destroy');
+
+//Users Routes
+Route::middleware(['auth'])->group(function () {
+    // Structural Account Management Router Config
+    Route::get('/admin/users', [App\Http\Controllers\UserController::class, 'index'])->name('admin.users.index');
+    Route::post('/admin/users', [App\Http\Controllers\UserController::class, 'store'])->name('admin.users.store');
+    Route::put('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.users.destroy');
+});
