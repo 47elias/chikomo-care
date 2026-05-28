@@ -30,9 +30,11 @@ Route::delete('/counselors/{id}', [CounselorController::class, 'destroy'])->name
 
 //Users Routes
 Route::middleware(['auth'])->group(function () {
-    // Structural Account Management Router Config
     Route::get('/admin/users', [App\Http\Controllers\UserController::class, 'index'])->name('admin.users.index');
     Route::post('/admin/users', [App\Http\Controllers\UserController::class, 'store'])->name('admin.users.store');
     Route::put('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'update'])->name('admin.users.update');
     Route::delete('/admin/users/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.users.destroy');
+
+    // Status Toggling Switch Engine Route Configuration
+    Route::patch('/admin/users/{id}/toggle', [App\Http\Controllers\UserController::class, 'toggleStatus'])->name('admin.users.toggle');
 });
