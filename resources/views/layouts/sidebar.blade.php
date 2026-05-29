@@ -21,51 +21,57 @@
               </span>
         </div>
       </form>
+
       <ul class="sidebar-menu" data-widget="tree">
-        <li class="header">MAIN NAVIGATION</li>
 
-        <li class="{{ Request::is('dashboard*') ? 'active' : '' }}">
-          <a href="{{ route('dashboard') }}">
-            <i class="fa fa-dashboard"></i> <span>Dashboard</span>
-          </a>
-        </li>
+        {{-- MAIN NAVIGATION: Visible strictly to Admins only --}}
+        @if(auth()->check() && auth()->user()->role === 'admin')
+            <li class="header">MAIN NAVIGATION</li>
 
-        {{-- Analytics based on conversations and risk levels --}}
-        <li class="{{ Request::is('analytics*') ? 'active' : '' }}">
-          <a href="{{ route('analytics') }}">
-            <i class="fa fa-pie-chart"></i>
-            <span>Analytics Insights</span>
-          </a>
-        </li>
+            <li class="{{ Request::is('dashboard*') ? 'active' : '' }}">
+              <a href="{{ route('dashboard') }}">
+                <i class="fa fa-dashboard"></i> <span>Dashboard</span>
+              </a>
+            </li>
 
-        {{-- Counselor Management --}}
-        <li class="treeview">
-          <a href="#">
-            <i class="fa fa-user-md"></i> <span>Counselors</span>
-            <span class="pull-right-container">
-              <i class="fa fa-angle-left pull-right"></i>
-            </span>
-          </a>
-          <ul class="treeview-menu">
-            <li><a href="{{ route('counsillors.index') }}"><i class="fa fa-circle-o"></i> Counselor Directory</a></li>
-            <li><a href="{{ route('counsillor_log') }}"><i class="fa fa-circle-o"></i> Assignment Logs</a></li>
-          </ul>
-        </li>
+            {{-- Analytics based on conversations and risk levels --}}
+            <li class="{{ Request::is('analytics*') ? 'active' : '' }}">
+              <a href="{{ route('analytics') }}">
+                <i class="fa fa-pie-chart"></i>
+                <span>Analytics Insights</span>
+              </a>
+            </li>
 
-        {{-- User Management - For Admin and Anyms-Users --}}
-        <li class="treeview">
-          <a href="#">
-            <i class="fa fa-users"></i> <span>User Management</span>
-            <span class="pull-right-container">
-              <i class="fa fa-angle-left pull-right"></i>
-            </span>
-          </a>
-          <ul class="treeview-menu">
-            <li><a href="admin/users"><i class="fa fa-circle-o"></i> Administrators</a></li>
-            <li><a href="{{ route('anonymous.index') }}"><i class="fa fa-circle-o"></i> Anonymous Users</a></li>
-          </ul>
-        </li>
+            {{-- Counselor Management --}}
+            <li class="treeview">
+              <a href="#">
+                <i class="fa fa-user-md"></i> <span>Counselors</span>
+                <span class="pull-right-container">
+                  <i class="fa fa-angle-left pull-right"></i>
+                </span>
+              </a>
+              <ul class="treeview-menu">
+                <li><a href="{{ route('counsillors.index') }}"><i class="fa fa-circle-o"></i> Counselor Directory</a></li>
+                <li><a href="{{ route('counsillor_log') }}"><i class="fa fa-circle-o"></i> Assignment Logs</a></li>
+              </ul>
+            </li>
 
+            {{-- User Management - For Admin and Anyms-Users --}}
+            <li class="treeview">
+              <a href="#">
+                <i class="fa fa-users"></i> <span>User Management</span>
+                <span class="pull-right-container">
+                  <i class="fa fa-angle-left pull-right"></i>
+                </span>
+              </a>
+              <ul class="treeview-menu">
+                <li><a href="admin/users"><i class="fa fa-circle-o"></i> Administrators</a></li>
+                <li><a href="{{ route('anonymous.index') }}"><i class="fa fa-circle-o"></i> Anonymous Users</a></li>
+              </ul>
+            </li>
+        @endif
+
+        {{-- CARE & SUPPORT ENGINE: Visible to everyone logged in (Admin and Counselor alike) --}}
         <li class="header">CARE & SUPPORT ENGINE</li>
 
         {{-- Stress Modules --}}
@@ -89,6 +95,7 @@
             </a>
         </li>
 
+        {{-- SYSTEM CONTROL: Visible to everyone logged in --}}
         <li class="header">SYSTEM CONTROL</li>
 
         {{-- Settings --}}
@@ -118,4 +125,4 @@
         </li>
       </ul>
     </section>
-    </aside>
+</aside>

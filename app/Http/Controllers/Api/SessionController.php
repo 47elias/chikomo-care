@@ -14,29 +14,37 @@ class SessionController extends Controller
         $token = $request->header('X-Chikomo-Token');
         $conversation = null;
 
-        // Only try to find if the token isn't empty/null
         if (!empty($token)) {
             $conversation = Conversation::where('token', $token)->first();
         }
 
-        // If no token provided OR token doesn't exist in DB, create a new one
         if (!$conversation) {
             $conversation = Conversation::create([
                 'token' => Str::random(40),
-                'alias' => $this->generateAlias()
+                'alias' => $this->generateUniqueAlias(),
+                'status' => 'pending',
+                'risk_level' => 'low',
+                'is_flagged' => 0
             ]);
         }
 
         return response()->json([
             'token' => $conversation->token,
             'alias' => $conversation->alias,
+            'status' => $conversation->status,
+            'counselor_id' => $conversation->counselor_id
         ]);
     }
 
-    private function generateAlias(): string
+    private function generateUniqueAlias(): string
     {
-        $adj = ['Steady', 'Resilient', 'Quiet', 'Brave', 'Bright', 'Kind', 'Calm'];
-        $noun = ['Mountain', 'River', 'Shield', 'Path', 'Star', 'Guardian', 'Anchor'];
-        return $adj[array_rand($adj)] . ' ' . $noun[array_rand($noun)];
+        $adj = ['Steady', 'Resilient', 'Quiet', 'Brave', 'Bright', 'Kind', 'Calm', 'Noble', 'Wise', 'Gentle'];
+        $noun = ['Mountain', 'River', 'Shield', 'Path', 'Star', 'Guardian', 'Anchor', 'Forest', 'Beacon', 'Ocean'];
+
+        do {
+            $generatedAlias = $adj[array_rand($adj)] . ' ' . $noun[array_rand($noun)] . ' ' . rand(100, 999);
+        } while (Conversation::where('alias', $generatedAlias)->exists());
+
+        return $generatedAlias;
     }
 }
