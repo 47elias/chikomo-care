@@ -6,6 +6,8 @@ use App\Http\Controllers\CounselorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AnonymousController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\PeerStoryController;
+use App\Http\Controllers\CounselorPortalController;
 use App\Http\Controllers\StressModuleController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
@@ -62,4 +64,22 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/stress-modules', [StressModuleController::class, 'index'])->name('stress-modules.index');
     Route::post('/stress-modules', [StressModuleController::class, 'store'])->name('stress-modules.store');
     Route::delete('/stress-modules/{id}', [StressModuleController::class, 'destroy'])->name('stress-modules.destroy');
+});
+
+// Peer Stories Routes
+Route::middleware(['web', 'auth'])->group(function () {
+    // Peer Narrative Interaction Routes Stack
+    Route::get('/peer-stories', [PeerStoryController::class, 'index'])->name('peer-stories.index');
+    Route::patch('/peer-stories/{id}/toggle', [PeerStoryController::class, 'toggleApproval'])->name('peer-stories.toggle');
+    Route::delete('/peer-stories/{id}', [PeerStoryController::class, 'destroy'])->name('peer-stories.destroy');
+});
+
+// Counselor Portal Routes
+Route::middleware(['web', 'auth'])->group(function () {
+    // Counselor Module Application Interfacing Endpoints
+    Route::get('/counselor-portal', [CounselorPortalController::class, 'index'])->name('counselor-portal.index');
+    Route::post('/counselor-portal/accept/{id}', [CounselorPortalController::class, 'acceptRequest'])->name('counselor.accept');
+    Route::get('/counselor-portal/chat/{id}', [CounselorPortalController::class, 'liveChatRoom'])->name('counselor.chat');
+    // Terminate, save metrics summaries, and log session data
+    Route::post('/counselor-portal/close/{id}', [CounselorPortalController::class, 'closeSession'])->name('counselor.close');
 });

@@ -70,23 +70,23 @@
 
         {{-- Stress Modules --}}
         <li class="{{ Request::is('stress-modules*') ? 'active' : '' }}">
-        <a href="{{ route('stress-modules.index') }}">
-            <i class="fa fa-heart"></i> <span>Stress Modules</span>
-        </a>
+            <a href="{{ route('stress-modules.index') }}">
+                <i class="fa fa-heart"></i> <span>Stress Modules</span>
+            </a>
         </li>
 
         {{-- Peer Stories --}}
         <li class="{{ Request::is('peer-stories*') ? 'active' : '' }}">
-          <a href="#">
-            <i class="fa fa-book"></i> <span>Peer Stories</span>
-          </a>
+            <a href="{{ route('peer-stories.index') }}">
+                <i class="fa fa-book"></i> <span>Peer Stories</span>
+            </a>
         </li>
 
         {{-- Counselor Module Portal --}}
         <li class="{{ Request::is('counselor-portal*') ? 'active' : '' }}">
-          <a href="#">
-            <i class="fa fa-mortar-board"></i> <span>Counselor Module</span>
-          </a>
+            <a href="{{ route('counselor-portal.index') }}">
+                <i class="fa fa-mortar-board"></i> <span>Counselor Module</span>
+            </a>
         </li>
 
         <li class="header">SYSTEM CONTROL</li>
