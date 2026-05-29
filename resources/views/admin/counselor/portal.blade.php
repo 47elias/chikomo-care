@@ -1,5 +1,4 @@
 @extends('layouts.master')
-<title>Counselor Console - Chikomo Care</title>
 
 @section('content-wrapper')
 <div class="content-wrapper">
@@ -15,135 +14,132 @@
     </section>
 
     <section class="content">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                <h4><i class="icon fa fa-check"></i> Connected</h4>
-                {{ session('success') }}
-            </div>
-        @endif
+        {{-- Alert Containers --}}
+        <div id="alert-container">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible"><button type="button" class="close" data-dismiss="alert">×</button><h4><i class="icon fa fa-check"></i> Success</h4>{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert">×</button><h4><i class="icon fa fa-ban"></i> Alert</h4>{{ session('error') }}</div>
+            @endif
+        </div>
 
         <div class="row">
-            {{-- Left Column: Live Queue and Active Connections --}}
             <div class="col-md-7">
-                {{-- Live Incoming Triage Pool Requests Box --}}
-                <div class="box box-warning shadow-sm" style="border-radius: 4px;">
+                {{-- Live Incoming Requests --}}
+                <div class="box box-warning shadow-sm">
                     <div class="box-header with-border">
                         <h3 class="box-title" style="font-weight: 600; color: #e67e22;">
-                            <i class="fa fa-bell text-orange animated infinite pulse"></i> Incoming Request Queue
+                            <i class="fa fa-bell"></i> Incoming Request Queue
                         </h3>
                     </div>
                     <div class="box-body">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover">
                                 <thead>
-                                    <tr style="background: #f9fafb;">
+                                    <tr>
                                         <th>User Alias</th>
                                         <th>Risk Classification</th>
                                         <th>Requested At</th>
                                         <th class="text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @if(count($incomingRequests) > 0)
-                                        @foreach($incomingRequests as $req)
-                                            <tr>
-                                                <td style="font-weight: 600;"><i class="fa fa-user-secret text-muted"></i> {{ $req->alias ?? 'Anonymous Guest' }}</td>
-                                                <td>
-                                                    @if(strtolower($req->risk_level) == 'high')
-                                                        <span class="label label-danger">High Risk</span>
-                                                    @else
-                                                        <span class="label label-success">Standard</span>
-                                                    @endif
-                                                </td>
-                                                <td class="text-muted">{{ \Carbon\Carbon::parse($req->created_at)->format('H:i:s (d M)') }}</td>
-                                                <td class="text-center">
-                                                    <form action="{{ route('counselor.accept', $req->id) }}" method="POST">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-xs btn-primary style-flat" style="font-weight:600;">
-                                                            <i class="fa fa-sign-in"></i> Accept Connection
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted" style="padding: 24px;">
-                                                <i class="fa fa-refresh fa-spin text-muted"></i> Waiting for new client requests...
-                                            </td>
-                                        </tr>
-                                    @endif
+                                <tbody id="live-queue-table-body">
+                                    {{-- Populated via AJAX --}}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                {{-- Active ongoing sessions box --}}
-                <div class="box box-success shadow-sm" style="border-radius: 4px;">
+                {{-- Active Sessions --}}
+                <div class="box box-success shadow-sm">
                     <div class="box-header with-border">
-                        <h3 class="box-title" style="font-weight: 600; color: #27ae60;">
-                            <i class="fa fa-comments text-success"></i> Your Active Counseling Connections
-                        </h3>
+                        <h3 class="box-title" style="color: #27ae60;"><i class="fa fa-comments"></i> Your Active Connections</h3>
                     </div>
-                    <div class="box-body">
-                        @if(count($activeChats) > 0)
-                            @foreach($activeChats as $chat)
-                                <div class="attachment-block clearfix" style="background: #fff; border: 1px solid #ddd; margin-bottom: 10px; padding: 12px; border-radius: 3px;">
-                                    <div class="attachment-pushed" style="margin-left: 0;">
-                                        <h4 class="attachment-heading" style="margin: 0 0 5px 0;">
-                                            <a href="{{ route('counselor.chat', $chat->id) }}" style="font-weight: 700; color: #2c3e50;">
-                                                <i class="fa fa-comment text-green"></i> Session: {{ $chat->alias ?? 'Anonymous Client' }}
-                                            </a>
-                                            <span class="pull-right label label-success">Active Connection</span>
-                                        </h4>
-                                        <div class="attachment-text text-muted" style="font-size: 12px; margin-bottom: 8px;">
-                                            Risk Triage Rank Status: <strong>{{ strtoupper($chat->risk_level ?? 'LOW') }}</strong> | Opened: {{ $chat->updated_at->diffForHumans() }}
-                                        </div>
-                                        <a href="{{ route('counselor.chat', $chat->id) }}" class="btn btn-sm btn-success btn-flat"><i class="fa fa-keyboard-o"></i> Open Console Workspace</a>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <p class="text-muted text-center" style="padding: 15px; margin: 0;">You have no active chat sessions open at this time.</p>
-                        @endif
+                    <div class="box-body" id="active-chats-container">
+                        @forelse($activeChats as $chat)
+                            <div class="attachment-block" style="border: 1px solid #ddd; padding: 10px; margin-bottom: 5px;">
+                                <h4><a href="{{ route('counselor.chat', $chat->id) }}">{{ $chat->alias ?? 'Anonymous Client' }}</a></h4>
+                                <a href="{{ route('counselor.chat', $chat->id) }}" class="btn btn-sm btn-success">Open Workspace</a>
+                            </div>
+                        @empty
+                            <p class="text-muted text-center">No active sessions.</p>
+                        @endforelse
                     </div>
                 </div>
             </div>
 
-            {{-- Right Column: Historical Log Archives --}}
+            {{-- Historical Logs --}}
             <div class="col-md-5">
-                <div class="box box-default shadow-sm" style="border-radius: 4px;">
-                    <div class="box-header with-border">
-                        <h3 class="box-title" style="font-weight: 600;"><i class="fa fa-history text-muted"></i> Archive Logs & Summaries</h3>
-                    </div>
+                <div class="box box-default shadow-sm">
+                    <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-history"></i> Archive Logs</h3></div>
                     <div class="box-body" style="max-height: 520px; overflow-y: auto;">
-                        @if(count($historicalLogs) > 0)
-                            <ul class="timeline timeline-inverse" style="margin-bottom: 0;">
-                                @foreach($historicalLogs as $logItem)
-                                    <li>
-                                        <i class="fa fa-folder bg-purple"></i>
-                                        <div class="timeline-item" style="box-shadow: none; background: #f8f9fa; border: 1px solid #eee;">
-                                            <span class="time" style="color: #999;"><i class="fa fa-clock-o"></i> {{ \Carbon\Carbon::parse($logItem->session_ended_at)->format('d M Y') }}</span>
-                                            <h3 class="timeline-header" style="font-size: 13px; font-weight: 700;">
-                                                Closed Case ID: #{{ $logItem->conversation_id }} ({{ $logItem->conversation->alias ?? 'Anonymous Peer' }})
-                                            </h3>
-                                            <div class="timeline-body" style="font-size: 12px; color: #555; padding: 8px;">
-                                                <strong>Case Notes:</strong> {{ $logItem->summary_notes ?? 'No operational summary recorded.' }}
-                                            </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                                <li><i class="fa fa-clock-o bg-gray"></i></li>
-                            </ul>
-                        @else
-                            <p class="text-muted text-center" style="padding: 20px; margin: 0;">No completed counseling records saved to your account log archive.</p>
-                        @endif
+                        <ul class="timeline timeline-inverse">
+                            @foreach($historicalLogs as $logItem)
+                                <li>
+                                    <i class="fa fa-folder bg-purple"></i>
+                                    <div class="timeline-item">
+                                        <span class="time"><i class="fa fa-clock-o"></i> {{ \Carbon\Carbon::parse($logItem->session_ended_at)->format('d M') }}</span>
+                                        <h3 class="timeline-header">Closed Case #{{ $logItem->conversation_id }}</h3>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        const csrfToken = "{{ csrf_token() }}";
+
+        function updateQueue() {
+            $.ajax({
+                url: "{{ route('counselor.queue.json') }}",
+                type: "GET",
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                success: function(data) {
+                    const tableBody = $('#live-queue-table-body');
+
+                    if (!data || data.length === 0) {
+                        tableBody.html('<tr><td colspan="4" class="text-center">No pending requests.</td></tr>');
+                        return;
+                    }
+
+                    let rows = '';
+                    data.forEach(req => {
+                        const riskBadge = req.risk_level === 'high' ?
+                            '<span class="label label-danger">High Risk</span>' :
+                            '<span class="label label-success">Standard</span>';
+
+                        rows += `
+                            <tr>
+                                <td>${req.alias}</td>
+                                <td>${riskBadge}</td>
+                                <td>${req.formatted_time}</td>
+                                <td class="text-center">
+                                    <form action="/counselor-portal/accept/${req.id}" method="POST">
+                                        <input type="hidden" name="_token" value="${csrfToken}">
+                                        <button type="submit" class="btn btn-xs btn-primary">Accept</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tableBody.html(rows);
+                },
+                error: function(err) { console.error("Polling error:", err); }
+            });
+        }
+
+        // Poll every 3 seconds
+        setInterval(updateQueue, 3000);
+        updateQueue();
+    });
+</script>
 @endsection

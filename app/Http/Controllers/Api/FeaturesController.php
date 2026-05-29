@@ -61,11 +61,11 @@ class FeaturesController extends Controller
             return response()->json(['error' => 'Session not found'], 404);
         }
 
-        // Change status to requested or searching
-        $conversation->update(['status' => 'searching']);
+        // Change status to requested/searching or pending to hit the Counselor Portal Queue
+        $conversation->update(['status' => 'pending']);
 
         return response()->json([
-            'status' => 'searching',
+            'status' => 'pending',
             'alias' => $conversation->alias
         ]);
     }
@@ -98,9 +98,19 @@ class FeaturesController extends Controller
 
         $messages = DB::table('messages')
             ->where('conversation_id', $conversation->id)
-            ->whereIn('sender_type', ['user', 'moderator'])
+            ->whereIn('sender_type', ['user', 'moderator', 'counselor'])
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->map(function($msg) {
+                return [
+                    'id' => $msg->id,
+                    'conversation_id' => $msg->conversation_id,
+                    'sender_type' => $msg->sender_type,
+                    'content' => $msg->content,
+                    'time' => \Carbon\Carbon::parse($msg->created_at)->format('H:i'),
+                    'created_at' => $msg->created_at
+                ];
+            ]);
 
         return response()->json($messages);
     }

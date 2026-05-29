@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Sidebar from './Sidebar';
-import { Send, Sparkles, SendHorizontal, Users, RefreshCw, Feather, Menu, X } from 'lucide-react';
+import { Send, Sparkles, SendHorizontal, Users, RefreshCw, Feather, Menu, X, MessageSquare, Download } from 'lucide-react';
 
 export default function ChikomoChat() {
   // Core Identity States
@@ -20,6 +20,8 @@ export default function ChikomoChat() {
 
   // Feature Component Sub-States
   const [modules, setModules] = useState([]);
+  const [activeModuleComments, setActiveModuleComments] = useState({}); // Tracks expanding/viewing comment lists per module ID
+  const [moduleCommentInputs, setModuleCommentInputs] = useState({}); // Stores text input per module ID
   const [stories, setStories] = useState([]);
   const [storyTitle, setStoryTitle] = useState('');
   const [storyContent, setStoryContent] = useState('');
@@ -42,10 +44,13 @@ export default function ChikomoChat() {
         setAlias(data.alias);
         localStorage.setItem('chikomo_token', data.token);
 
-        if (data.status === 'searching' || data.counselor_id) {
+        if (data.status === 'searching' || data.status === 'pending' || data.counselor_id) {
           const matchedStatus = data.counselor_id ? 'active' : 'searching';
           setCounselorStatus(matchedStatus);
           localStorage.setItem('counselor_room_status', matchedStatus);
+          if (matchedStatus === 'active') {
+            setCurrentView('counselor-chat');
+          }
         }
 
         // Load initial chat history and conversation listings
@@ -73,10 +78,16 @@ export default function ChikomoChat() {
           const response = await axios.get('/api/counselor/status', {
             headers: { 'X-Chikomo-Token': token }
           });
-          if (response.data.status === 'completed') {
+
+          const currentStatus = response.data.status;
+
+          if (currentStatus === 'completed') {
             setCounselorStatus('completed');
-          } else if (response.data.counselor_id) {
-            setCounselorStatus('active');
+          } else if (response.data.counselor_id || currentStatus === 'active' || currentStatus === 'accepted') {
+            if (counselorStatus !== 'active') {
+              setCounselorStatus('active');
+              setCurrentView('counselor-chat'); // Instantly shift workspace view frame to counselor window
+            }
             fetchCounselorHistory();
           }
         } catch (e) {
@@ -84,7 +95,9 @@ export default function ChikomoChat() {
         }
       };
 
-      interval = setInterval(pollStatus, 4000);
+      // Poll instantly on mount/status switch, then drop into loop interval
+      pollStatus();
+      interval = setInterval(pollStatus, 2500);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -125,6 +138,67 @@ export default function ChikomoChat() {
     } catch (e) { console.error(e); }
   };
 
+  // Trigger download count increment via API endpoint
+  const handleDownloadTrack = async (moduleId) => {
+    try {
+      await axios.post(`/api/stress-modules/${moduleId}/download`, {}, {
+        headers: { 'X-Chikomo-Token': token }
+      });
+      // Optimistically update count locally to prevent re-fetching jitter
+      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, download_count: m.download_count + 1 } : m));
+    } catch (e) {
+      console.error("Failed to track download action", e);
+    }
+  };
+
+  // Expand or close a module's comments container
+  const toggleCommentsView = (moduleId) => {
+    setActiveModuleComments(prev => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
+  };
+
+  // Handle local state typing per individual module input line
+  const handleCommentInputChange = (moduleId, text) => {
+    setModuleCommentInputs(prev => ({
+      ...prev,
+      [moduleId]: text
+    }));
+  };
+
+  // Post anonymous module validation feedback or inquiry
+  const handlePostModuleComment = async (e, moduleId) => {
+    e.preventDefault();
+    const commentText = moduleCommentInputs[moduleId];
+    if (!commentText || !commentText.trim()) return;
+
+    try {
+      const response = await axios.post(`/api/stress-modules/${moduleId}/comments`, {
+        comment: commentText
+      }, {
+        headers: { 'X-Chikomo-Token': token }
+      });
+
+      // Clear layout text field input box
+      setModuleCommentInputs(prev => ({ ...prev, [moduleId]: '' }));
+
+      // Append new comment onto module structure in context dynamically
+      setModules(prev => prev.map(m => {
+        if (m.id === moduleId) {
+          const currentComments = m.comments || [];
+          return {
+            ...m,
+            comments: [...currentComments, response.data]
+          };
+        }
+        return m;
+      }));
+    } catch (e) {
+      console.error("Failed to submit comment", e);
+    }
+  };
+
   const fetchPeerStories = async () => {
     try {
       const res = await axios.get('/api/peer-stories');
@@ -135,7 +209,9 @@ export default function ChikomoChat() {
   const fetchCounselorHistory = async () => {
     try {
       const res = await axios.get('/api/counselor/history', { headers: { 'X-Chikomo-Token': token } });
-      if (res.data.length > 0) setCounselorMessages(res.data);
+      if (res.data && res.data.length > 0) {
+        setCounselorMessages(res.data);
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -172,12 +248,32 @@ export default function ChikomoChat() {
     }
   };
 
-  // Request Human Queue placement
-  const handleRequestCounselor = async () => {
+  // Explicitly trigger human chat queue pipeline instantiations via custom API matching route
+  const handleRequestCounselor = async (selectedRisk = 'low') => {
+    setIsLoading(true);
     try {
-      const res = await axios.post('/api/counselor/request', {}, { headers: { 'X-Chikomo-Token': token } });
-      setCounselorStatus(res.data.status);
-    } catch (e) { console.error(e); }
+      const response = await axios.post('/api/conversations/create', {
+        risk_level: selectedRisk
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Chikomo-Token': token
+        }
+      });
+
+      if (response.data.success) {
+        setCounselorStatus('searching');
+        setAlias(response.data.conversation.alias);
+        localStorage.setItem('counselor_room_status', 'searching');
+      } else {
+        alert("Failed to initialize connection queue.");
+      }
+    } catch (e) {
+      console.error("Error creating chat request pipeline:", e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Submit Live Human Message stream
@@ -195,6 +291,7 @@ export default function ChikomoChat() {
         message: msgText,
         token: token
       });
+      fetchCounselorHistory();
     } catch (err) {
       console.error(err);
     }
@@ -224,7 +321,7 @@ export default function ChikomoChat() {
   return (
     <div className="flex w-screen h-screen bg-slate-950 font-sans overflow-hidden relative">
 
-      {/* 1. DESKTOP VIEW SIDEBAR (Hidden on mobile screens, visible on large breakpoints) */}
+      {/* 1. DESKTOP VIEW SIDEBAR */}
       <div className="hidden lg:block">
         <Sidebar
           currentView={currentView}
@@ -241,15 +338,12 @@ export default function ChikomoChat() {
       {/* 2. RESPONSIVE MOBILE DRAWER SLIDE-OVER OVERLAY FRAMEWORK */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          {/* Backdrop Shadow Mask overlay - Clicking closes drawer */}
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => setIsDrawerOpen(false)}
           />
 
-          {/* Sliding Drawer Container */}
           <div className="relative flex flex-col w-80 max-w-sm bg-slate-900 h-full shadow-2xl border-r border-slate-800 z-10">
-            {/* Close Button Anchor */}
             <div className="absolute top-4 right-4 z-20">
               <button
                 onClick={() => setIsDrawerOpen(false)}
@@ -267,7 +361,7 @@ export default function ChikomoChat() {
                 conversations={conversations}
                 onSelectConversation={(chat) => {
                   setCurrentView('ai-chat');
-                  setIsDrawerOpen(false); // Closes drawer upon session selection handshake
+                  setIsDrawerOpen(false);
                   fetchChatHistory(chat.token);
                 }}
               />
@@ -284,7 +378,6 @@ export default function ChikomoChat() {
           <div className="flex-1 flex flex-col h-full relative">
             <header className="p-4 border-b border-slate-800 bg-slate-900 flex items-center justify-between">
               <div className="flex items-center space-x-3 min-w-0">
-                {/* Burger Menu Trigger Anchor (Opens Sidebar Drawer) */}
                 <button
                   onClick={() => setIsDrawerOpen(true)}
                   className="lg:hidden p-2 rounded-xl bg-slate-950/40 text-slate-400 hover:text-slate-200 border border-slate-800/80 focus:outline-none transition-all"
@@ -360,7 +453,10 @@ export default function ChikomoChat() {
                   <h3 className="text-lg font-bold text-slate-200">Connect with a Real Person</h3>
                   <p className="text-sm text-slate-400 mt-1">If you need targeted human guidance or formal assistance, request an allocation handshake with an active on-campus professional.</p>
                 </div>
-                <button onClick={handleRequestCounselor} className="bg-teal-600 hover:bg-teal-500 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg shadow-teal-600/20">
+                <button
+                  onClick={() => handleRequestCounselor('low')}
+                  className="bg-teal-600 hover:bg-teal-500 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg shadow-teal-600/20"
+                >
                   Establish Connection Request
                 </button>
               </div>
@@ -432,20 +528,83 @@ export default function ChikomoChat() {
                 <p className="text-sm text-slate-400 mt-1">Access modular guidelines and resource attachments uploaded by platform specialists.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {modules.length > 0 ? (
                   modules.map((m) => (
-                    <div key={m.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700 transition-all">
+                    <div key={m.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700 transition-all h-fit space-y-4">
                       <div>
                         <div className="bg-teal-500/10 border border-teal-500/20 w-10 h-10 rounded-xl flex items-center justify-center text-teal-400 mb-3 font-bold">
                           {m.title[0]}
                         </div>
                         <h4 className="font-semibold text-slate-200 text-base">{m.title}</h4>
-                        <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed">{m.description}</p>
+                        <p className="text-xs text-slate-400 mt-2 leading-relaxed">{m.description}</p>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
-                        <span>Downloads: {m.download_count}</span>
-                        <a href={`/${m.file_path}`} download className="text-teal-400 hover:underline font-medium">Download Attachment &rarr;</a>
+
+                      {/* Download Link Wrapper and Metadata Metrics */}
+                      <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <Download className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Downloads: <strong>{m.download_count}</strong></span>
+                        </span>
+                        <a
+                          href={`/${m.file_path}`}
+                          download
+                          onClick={() => handleDownloadTrack(m.id)}
+                          className="text-teal-400 hover:underline font-medium flex items-center space-x-1"
+                        >
+                          <span>Download Resource</span>
+                          <span>&rarr;</span>
+                        </a>
+                      </div>
+
+                      {/* Interactive Feedback & Comment Systems Block */}
+                      <div className="border-t border-slate-800/80 pt-3">
+                        <button
+                          onClick={() => toggleCommentsView(m.id)}
+                          className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-teal-500" />
+                          <span>Feedback ({m.comments ? m.comments.length : 0})</span>
+                        </button>
+
+                        {/* Expandable Comments Drawer Area */}
+                        {activeModuleComments[m.id] && (
+                          <div className="mt-3 space-y-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+                            {/* Inner Feedback Content Feed */}
+                            <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                              {m.comments && m.comments.length > 0 ? (
+                                m.comments.map((comment, cIdx) => (
+                                  <div key={comment.id || cIdx} className="text-xs border-b border-slate-900/60 pb-2 last:border-0 last:pb-0">
+                                    <div className="flex justify-between text-slate-500 mb-0.5 font-mono text-[10px]">
+                                      <span>{comment.author_alias || 'Anonymous Peer'}</span>
+                                      <span>{comment.created_at || 'Just now'}</span>
+                                    </div>
+                                    <p className="text-slate-300 leading-normal">{comment.content || comment.comment}</p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-[11px] text-slate-600 italic py-1">No comments submitted yet.</p>
+                              )}
+                            </div>
+
+                            {/* Comment Input Field */}
+                            <form onSubmit={(e) => handlePostModuleComment(e, m.id)} className="flex space-x-2 pt-1">
+                              <input
+                                type="text"
+                                placeholder="Write response anonymously..."
+                                value={moduleCommentInputs[m.id] || ''}
+                                onChange={(e) => handleCommentInputChange(m.id, e.target.value)}
+                                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-300 placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
+                              />
+                              <button
+                                type="submit"
+                                className="bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-medium px-3 rounded-lg transition-colors flex items-center"
+                              >
+                                Send
+                              </button>
+                            </form>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))

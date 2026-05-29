@@ -8,6 +8,7 @@ use App\Http\Controllers\AnonymousController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\PeerStoryController;
 use App\Http\Controllers\CounselorPortalController;
+use App\Http\Controllers\ClientChatRequestController;
 use App\Http\Controllers\StressModuleController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
@@ -19,6 +20,7 @@ Route::get('/', function () {
 Route::get('/admin', function () {
     return view('admin.login');
 });
+Route::post('/api/conversations/create', [ClientChatRequestController::class, 'store'])->name('api.conversations.create');
 //login route
 Route::get('login', [LoginController::class, 'show'])->name('login');
 Route::post('login', [LoginController::class, 'authenticate'])->name('login');
@@ -75,11 +77,10 @@ Route::middleware(['web', 'auth'])->group(function () {
 });
 
 // Counselor Portal Routes
-Route::middleware(['web', 'auth'])->group(function () {
-    // Counselor Module Application Interfacing Endpoints
-    Route::get('/counselor-portal', [CounselorPortalController::class, 'index'])->name('counselor-portal.index');
-    Route::post('/counselor-portal/accept/{id}', [CounselorPortalController::class, 'acceptRequest'])->name('counselor.accept');
-    Route::get('/counselor-portal/chat/{id}', [CounselorPortalController::class, 'liveChatRoom'])->name('counselor.chat');
-    // Terminate, save metrics summaries, and log session data
-    Route::post('/counselor-portal/close/{id}', [CounselorPortalController::class, 'closeSession'])->name('counselor.close');
+Route::middleware(['web', 'auth'])->prefix('counselor-portal')->group(function () {
+    Route::get('/', [CounselorPortalController::class, 'index'])->name('counselor-portal.index');
+    Route::get('/queue', [CounselorPortalController::class, 'queueJson'])->name('counselor.queue.json');
+    Route::post('/accept/{id}', [CounselorPortalController::class, 'acceptRequest'])->name('counselor.accept');
+    Route::get('/chat/{id}', [CounselorPortalController::class, 'liveChatRoom'])->name('counselor.chat');
+    Route::post('/close/{id}', [CounselorPortalController::class, 'closeSession'])->name('counselor.close');
 });
