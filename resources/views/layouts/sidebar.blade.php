@@ -1,7 +1,5 @@
 <aside class="main-sidebar">
-    <!-- sidebar: style can be found in sidebar.less -->
     <section class="sidebar">
-      <!-- Sidebar user panel -->
       <div class="user-panel">
         <div class="pull-left image">
           <img src="{{ asset('dist/img/user2-160x160.jpg') }}" class="img-circle" alt="User Image">
@@ -13,7 +11,6 @@
         </div>
       </div>
 
-      <!-- search form -->
       <form action="#" method="get" class="sidebar-form">
         <div class="input-group">
           <input type="text" name="q" class="form-control" placeholder="Search...">
@@ -24,21 +21,18 @@
               </span>
         </div>
       </form>
-      <!-- /.search form -->
-
-      <!-- sidebar menu: : style can be found in sidebar.less -->
       <ul class="sidebar-menu" data-widget="tree">
         <li class="header">MAIN NAVIGATION</li>
 
         <li class="{{ Request::is('dashboard*') ? 'active' : '' }}">
-          <a href={{ route('dashboard') }}>
+          <a href="{{ route('dashboard') }}">
             <i class="fa fa-dashboard"></i> <span>Dashboard</span>
           </a>
         </li>
 
         {{-- Analytics based on conversations and risk levels --}}
         <li class="{{ Request::is('analytics*') ? 'active' : '' }}">
-          <a href={{ route('analytics') }}>
+          <a href="{{ route('analytics') }}">
             <i class="fa fa-pie-chart"></i>
             <span>Analytics Insights</span>
           </a>
@@ -53,12 +47,12 @@
             </span>
           </a>
           <ul class="treeview-menu">
-            <li><a href={{ route('counsillors.index') }}><i class="fa fa-circle-o"></i> Counselor Directory</a></li>
-            <li><a href={{ route('counsillor_log') }}><i class="fa fa-circle-o"></i> Assignment Logs</a></li>
+            <li><a href="{{ route('counsillors.index') }}"><i class="fa fa-circle-o"></i> Counselor Directory</a></li>
+            <li><a href="{{ route('counsillor_log') }}"><i class="fa fa-circle-o"></i> Assignment Logs</a></li>
           </ul>
         </li>
 
-        {{-- User Management - For Admin and Anyms-Users[cite: 1] --}}
+        {{-- User Management - For Admin and Anyms-Users --}}
         <li class="treeview">
           <a href="#">
             <i class="fa fa-users"></i> <span>User Management</span>
@@ -68,8 +62,31 @@
           </a>
           <ul class="treeview-menu">
             <li><a href="admin/users"><i class="fa fa-circle-o"></i> Administrators</a></li>
-            <li><a href="#"><i class="fa fa-circle-o"></i> Anonymous Users</a></li>
+            <li><a href="{{ route('anonymous.index') }}"><i class="fa fa-circle-o"></i> Anonymous Users</a></li>
           </ul>
+        </li>
+
+        <li class="header">CARE & SUPPORT ENGINE</li>
+
+        {{-- Stress Modules --}}
+        <li class="{{ Request::is('stress-modules*') ? 'active' : '' }}">
+        <a href="{{ route('stress-modules.index') }}">
+            <i class="fa fa-heart"></i> <span>Stress Modules</span>
+        </a>
+        </li>
+
+        {{-- Peer Stories --}}
+        <li class="{{ Request::is('peer-stories*') ? 'active' : '' }}">
+          <a href="#">
+            <i class="fa fa-book"></i> <span>Peer Stories</span>
+          </a>
+        </li>
+
+        {{-- Counselor Module Portal --}}
+        <li class="{{ Request::is('counselor-portal*') ? 'active' : '' }}">
+          <a href="#">
+            <i class="fa fa-mortar-board"></i> <span>Counselor Module</span>
+          </a>
         </li>
 
         <li class="header">SYSTEM CONTROL</li>
@@ -101,5 +118,4 @@
         </li>
       </ul>
     </section>
-    <!-- /.sidebar -->
-</aside>
+    </aside>

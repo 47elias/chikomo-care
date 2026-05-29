@@ -6,6 +6,7 @@ use App\Http\Controllers\CounselorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AnonymousController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\StressModuleController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
 
@@ -54,5 +55,11 @@ Route::middleware(['web'])->group(function () {
    Route::get('analytics', [AnalyticsController::class, 'index'])
     ->middleware('auth')
     ->name('analytics');
-
+});
+//Stress Modules Routes
+Route::middleware(['web', 'auth'])->group(function () {
+    // Stress Modules Application Routing Matrix
+    Route::get('/stress-modules', [StressModuleController::class, 'index'])->name('stress-modules.index');
+    Route::post('/stress-modules', [StressModuleController::class, 'store'])->name('stress-modules.store');
+    Route::delete('/stress-modules/{id}', [StressModuleController::class, 'destroy'])->name('stress-modules.destroy');
 });
