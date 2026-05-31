@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\CounselorController;
 use App\Http\Controllers\ProfileController;
@@ -12,6 +13,12 @@ use App\Http\Controllers\ClientChatRequestController;
 use App\Http\Controllers\StressModuleController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
+
+//Cache Clearing Route and Optimization
+Route::get('/laravel-optimization-clear', function () {
+    Artisan::call('optimize:clear');
+    return 'All caches have been cleared successfully!';
+});
 
 // Catch-all route to ensure React handles the routing
 Route::get('/', function () {
