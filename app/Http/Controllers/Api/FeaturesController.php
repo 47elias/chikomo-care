@@ -101,7 +101,7 @@ class FeaturesController extends Controller
             ->whereIn('sender_type', ['user', 'moderator', 'counselor'])
             ->orderBy('created_at', 'asc')
             ->get()
-            ->map(function($msg) {
+            ->map(function ($msg) {
                 return [
                     'id' => $msg->id,
                     'conversation_id' => $msg->conversation_id,
@@ -110,7 +110,7 @@ class FeaturesController extends Controller
                     'time' => \Carbon\Carbon::parse($msg->created_at)->format('H:i'),
                     'created_at' => $msg->created_at
                 ];
-            ]);
+            });
 
         return response()->json($messages);
     }
