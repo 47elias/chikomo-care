@@ -32,13 +32,13 @@
                 {{-- User Profile Dropdown --}}
                 <li class="dropdown user user-menu">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <img src="{{ asset('adminlte/dist/img/avatar5.png') }}" class="user-image" alt="User Image" style="border: 1px solid rgba(255,255,255,0.2);">
+                        <img src="{{ asset('dist/img/avatar5.png') }}" class="user-image" alt="User Image" style="border: 1px solid rgba(255,255,255,0.2);">
                         <span class="hidden-xs">{{ Auth::user()?->name }}</span>
                     </a>
                     <ul class="dropdown-menu" style="border-radius: 8px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.25); width: 280px; margin-top: 1px;">
                         {{-- User Header - Keeping the Original Blue --}}
                         <li class="user-header">
-                            <img src="{{ asset('adminlte/dist/img/avatar5.png') }}" class="img-circle" alt="User Image" style="border: 3px solid rgba(255,255,255,0.2);">
+                            <img src="{{ asset('dist/img/avatar5.png') }}" class="img-circle" alt="User Image" style="border: 3px solid rgba(255,255,255,0.2);">
                             <p>
                                 {{ Auth::user()->name }}
                                 <small style="display: block; margin-top: 5px; opacity: 0.8;">Administrator</small>

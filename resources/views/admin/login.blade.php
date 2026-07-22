@@ -106,6 +106,7 @@
 <div class="login-box">
   <div class="login-logo">
     <h>{{ env('APP_NAME') }}</h>
+    <div class="logo">
   </div>
   <!-- /.login-logo -->
   <div class="login-box-body">
