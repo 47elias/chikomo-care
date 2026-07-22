@@ -88,7 +88,7 @@
                                                 <td class="date-cell">{{ $mod->created_at->format('Y-m-d H:i') }}</td>
                                                 <td class="text-center">
                                                     <div class="btn-group">
-                                                        <a href="{{ asset('storage/' . $mod->file_path) }}" target="_blank" class="btn btn-xs btn-default table-action-btn" title="View PDF Document"><i class="fa fa-eye text-info"></i></a>
+                                                        <a href="{{ asset($mod->file_path) }}" target="_blank" class="btn btn-xs btn-default table-action-btn" title="View PDF Document"><i class="fa fa-eye text-info"></i></a>
                                                         <form action="{{ route('stress-modules.destroy', $mod->id) }}" method="POST" class="inline-form" onsubmit="return confirm('Confirm permanent deletion of this file element?');">
                                                             @csrf
                                                             @method('DELETE')

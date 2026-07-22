@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StressModule;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class StressModuleController extends Controller
 {
@@ -23,13 +23,26 @@ class StressModuleController extends Controller
         ]);
 
         if ($request->hasFile('pdf_file')) {
-            // Stores inside storage/app/public/stress_modules/
-            $path = $request->file('pdf_file')->store('stress_modules', 'public');
+            $file = $request->file('pdf_file');
 
+            // Generate a safe, unique filename to avoid collisions/overwrites
+            $filename = time() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+
+            // Target folder lives directly inside /public — no storage:link needed
+            $destinationPath = public_path('uploads/stress_modules');
+
+            // Ensure the folder exists (safe to call even if it already does)
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            $file->move($destinationPath, $filename);
+
+            // Store only the relative path from /public, e.g. "uploads/stress_modules/xxx.pdf"
             StressModule::create([
                 'title' => $request->title,
                 'description' => $request->description,
-                'file_path' => $path,
+                'file_path' => 'uploads/stress_modules/' . $filename,
             ]);
 
             return redirect()->back()->with('success', 'Stress module PDF compiled and uploaded successfully.');
@@ -42,9 +55,11 @@ class StressModuleController extends Controller
     {
         $module = StressModule::findOrFail($id);
 
-        // Delete disk storage link track before removing metadata index record
-        if (Storage::disk('public')->exists($module->file_path)) {
-            Storage::disk('public')->delete($module->file_path);
+        // Delete the physical file directly from /public — no disk facade needed
+        $fullPath = public_path($module->file_path);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
         }
 
         $module->delete();
