@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\CounselorLog;
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -76,9 +77,6 @@ class CounselorPortalController extends Controller
                 ->first();
 
             if (!$conversation) {
-                // FIX: route name corrected to match web.php
-                // (was 'counselor.portal', which doesn't exist and
-                // would throw RouteNotFoundException on every race).
                 return redirect()->route('counselor-portal.index')
                     ->with('error', 'That request has already been picked up by another counselor.');
             }
@@ -111,6 +109,70 @@ class CounselorPortalController extends Controller
         return view('admin.counselor.chatroom', compact('conversation'));
     }
 
+    /**
+     * NEW: Persist a counselor's outgoing reply.
+     * This is a plain save — it does NOT call any AI/model logic,
+     * which is exactly what was missing (the endpoint didn't exist,
+     * so the Blade JS's POST to /send was 404ing).
+     */
+    public function sendMessage(Request $request, $id)
+    {
+        $request->validate([
+            'content' => 'required|string|max:2000',
+        ]);
+
+        $conversation = $this->humanOnly(Conversation::query())
+            ->where('id', $id)
+            ->where('counselor_id', Auth::id())
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'content' => $request->input('content'),
+            'sender_type' => 'moderator', // counselor reply; enum has no 'counselor' value yet
+        ]);
+
+        $conversation->touch();
+
+        return response()->json([
+            'id' => $message->id,
+            'time' => $message->created_at->format('H:i'),
+        ]);
+    }
+
+    /**
+     * NEW: Poll for new client messages since last_id.
+     * Only returns 'user' messages so the counselor UI doesn't
+     * echo its own just-sent bubble back a second time.
+     */
+    public function syncMessages(Request $request, $id)
+    {
+        $conversation = $this->humanOnly(Conversation::query())
+            ->where('id', $id)
+            ->where('counselor_id', Auth::id())
+            ->firstOrFail();
+
+        $lastId = (int) $request->query('last_id', 0);
+
+        $newMessages = $conversation->messages()
+            ->where('id', '>', $lastId)
+            ->where('sender_type', 'user')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($m) use ($conversation) {
+                return [
+                    'id' => $m->id,
+                    'content' => $m->content,
+                    'sender_type' => $m->sender_type,
+                    'alias' => $conversation->alias ?? 'Anonymous Guest',
+                    'time' => $m->created_at->format('H:i'),
+                ];
+            });
+
+        return response()->json($newMessages);
+    }
+
     public function closeSession(Request $request, $id)
     {
         $conversation = $this->humanOnly(Conversation::query())
@@ -134,7 +196,6 @@ class CounselorPortalController extends Controller
             ]);
         }
 
-        // FIX: route name corrected to match web.php
         return redirect()->route('counselor-portal.index')->with('success', 'Session archived.');
     }
 }

@@ -84,11 +84,15 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/peer-stories/{id}', [PeerStoryController::class, 'destroy'])->name('peer-stories.destroy');
 });
 
-// Counselor Portal Routes
+//Counsillor Routes
 Route::middleware(['web', 'auth'])->prefix('counselor-portal')->group(function () {
     Route::get('/', [CounselorPortalController::class, 'index'])->name('counselor-portal.index');
     Route::get('/queue', [CounselorPortalController::class, 'queueJson'])->name('counselor.queue.json');
     Route::post('/accept/{id}', [CounselorPortalController::class, 'acceptRequest'])->name('counselor.accept');
     Route::get('/chat/{id}', [CounselorPortalController::class, 'liveChatRoom'])->name('counselor.chat');
     Route::post('/close/{id}', [CounselorPortalController::class, 'closeSession'])->name('counselor.close');
+
+    // Routes for the chat controller
+    Route::post('/chat/{id}/send', [CounselorPortalController::class, 'sendMessage'])->name('counselor.chat.send');
+    Route::get('/chat/{id}/messages/sync', [CounselorPortalController::class, 'syncMessages'])->name('counselor.chat.sync');
 });

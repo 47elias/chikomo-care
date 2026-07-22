@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HumanConversation;
+use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -23,14 +23,17 @@ class ClientChatRequestController extends Controller
         $nouns = ['Mountain', 'Shield', 'River', 'Star', 'Guardian', 'Path', 'Anchor'];
         $generatedAlias = $prefixes[array_rand($prefixes)] . ' ' . $nouns[array_rand($nouns)];
 
-        // 3. Persist the request row into the isolated human conversations table
-        $conversation = HumanConversation::create([
+        // 3. Persist the request row into the SAME table the counselor portal reads from.
+        // (Previously wrote to HumanConversation, which CounselorPortalController never queries —
+        // that's why requests never showed up in the counselor queue.)
+        $conversation = Conversation::create([
             'token' => Str::random(40), // Unique tracking token identifier
             'alias' => $generatedAlias,
             'risk_level' => $request->input('risk_level', 'low'),
             'status' => 'pending', // Marks it as active and visible inside the counselor queue
             'counselor_id' => null, // Left empty until claimed by an online counselor
             'is_flagged' => $request->input('risk_level') === 'high' ? true : false,
+            'is_human_request' => true, // REQUIRED: CounselorPortalController::humanOnly() filters on this
         ]);
 
         // 4. Return the data properties back to React to mount the client terminal screen window
