@@ -11,6 +11,7 @@ use App\Http\Controllers\PeerStoryController;
 use App\Http\Controllers\CounselorPortalController;
 use App\Http\Controllers\ClientChatRequestController;
 use App\Http\Controllers\StressModuleController;
+use App\Http\Controllers\Api\FeaturesController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
 
@@ -27,7 +28,7 @@ Route::get('/', function () {
 Route::get('/admin', function () {
     return view('admin.login');
 });
-Route::post('/api/conversations/create', [ClientChatRequestController::class, 'store'])->name('api.conversations.create');
+Route::post('/api/conversations/create', [FeaturesController::class, 'requestCounselor'])->name('api.conversations.create');
 //login route
 Route::get('login', [LoginController::class, 'show'])->name('login');
 Route::post('login', [LoginController::class, 'authenticate'])->name('login');

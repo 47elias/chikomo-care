@@ -43,17 +43,34 @@ class FeaturesController extends Controller
             'author_alias' => $alias,
             'title' => $request->title,
             'content' => $request->content,
-            'is_approved' => 1, // Set to 1 for immediate testing, can change to 0 for admin moderation
+            // Requires admin moderation before appearing publicly.
+            // Build/confirm an approval queue before relying on this default.
+            'is_approved' => 0,
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
-        return response()->json(['message' => 'Story shared successfully!'], 201);
+        return response()->json(['message' => 'Story submitted for review!'], 201);
     }
 
     // Request Human Counselor Chat Room
     public function requestCounselor(Request $request)
     {
+ \Illuminate\Support\Facades\Log::info('requestCounselor HIT', [
+        'risk_level_input' => $request->input('risk_level'),
+        'token' => $request->header('X-Chikomo-Token'),
+    ]);
+
+    $request->validate([
+        'risk_level' => 'sometimes|in:low,medium,high',
+    ]);
+
+
+
+        $request->validate([
+            'risk_level' => 'sometimes|in:low,medium,high',
+        ]);
+
         $token = $request->header('X-Chikomo-Token');
         $conversation = Conversation::where('token', $token)->first();
 
@@ -61,12 +78,25 @@ class FeaturesController extends Controller
             return response()->json(['error' => 'Session not found'], 404);
         }
 
-        // Change status to requested/searching or pending to hit the Counselor Portal Queue
-        $conversation->update(['status' => 'pending']);
+        $riskLevel = $request->input('risk_level', $conversation->risk_level);
+
+        // Change status to pending to hit the Counselor Portal Queue,
+        // persist the risk level the frontend actually sent instead of
+        // silently keeping whatever the conversation already had, and
+        // flag this row as a genuine human-handoff request — this is
+        // the field CounselorPortalController's queue actually filters on.
+        $conversation->update([
+            'status' => 'pending',
+            'risk_level' => $riskLevel,
+            'is_human_request' => true,
+            'is_flagged' => $riskLevel === 'high' ? true : $conversation->is_flagged,
+        ]);
 
         return response()->json([
+            'success' => true,
             'status' => 'pending',
-            'alias' => $conversation->alias
+            'alias' => $conversation->alias,
+            'conversation' => $conversation,
         ]);
     }
 
@@ -98,7 +128,12 @@ class FeaturesController extends Controller
 
         $messages = DB::table('messages')
             ->where('conversation_id', $conversation->id)
-            ->whereIn('sender_type', ['user', 'moderator', 'counselor'])
+            // 'counselor' removed: the `messages.sender_type` column is
+            // enum('user','ai','moderator') — 'counselor' can never match
+            // and any insert attempting it would fail the enum constraint.
+            // If counselor replies need their own category, migrate the
+            // enum to add 'counselor' rather than referencing it here.
+            ->whereIn('sender_type', ['user', 'moderator'])
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($msg) {

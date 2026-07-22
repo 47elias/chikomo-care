@@ -2,21 +2,268 @@
 <title>Anonymous Interactions Registry - Chikomo Care</title>
 
 @section('content-wrapper')
-<div class="content-wrapper">
+<style>
+    :root {
+        --registry-ink: #1f2a37;
+        --registry-muted: #6b7785;
+        --registry-line: #e7eaee;
+        --registry-surface: #ffffff;
+        --registry-canvas: #f6f7f9;
+        --registry-teal: #1c7f77;
+        --registry-teal-soft: #e6f3f2;
+        --registry-amber: #b8791a;
+        --registry-amber-soft: #fbf1e0;
+        --registry-rose: #b5424a;
+        --registry-rose-soft: #fbeaec;
+    }
+
+    .registry-header {
+        padding: 22px 26px;
+        background: var(--registry-surface);
+        border: 1px solid var(--registry-line);
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .registry-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--registry-ink);
+        margin: 0 0 4px 0;
+        letter-spacing: -0.01em;
+    }
+    .registry-header .registry-subtitle {
+        font-size: 13px;
+        color: var(--registry-muted);
+        font-weight: 400;
+    }
+    .registry-header .breadcrumb {
+        background: none;
+        padding: 0;
+        margin: 12px 0 0 0;
+        font-size: 12px;
+    }
+
+    .registry-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 767px) {
+        .registry-stats { grid-template-columns: 1fr; }
+    }
+    .stat-card {
+        background: var(--registry-surface);
+        border: 1px solid var(--registry-line);
+        border-radius: 10px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-left: 3px solid var(--registry-teal);
+    }
+    .stat-card.stat-flagged { border-left-color: var(--registry-rose); }
+    .stat-card.stat-risk { border-left-color: var(--registry-amber); }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        background: var(--registry-teal-soft);
+        color: var(--registry-teal);
+    }
+    .stat-flagged .stat-icon { background: var(--registry-rose-soft); color: var(--registry-rose); }
+    .stat-risk .stat-icon { background: var(--registry-amber-soft); color: var(--registry-amber); }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--registry-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 2px;
+    }
+    .stat-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--registry-ink);
+        line-height: 1;
+    }
+
+    .registry-panel {
+        background: var(--registry-surface);
+        border: 1px solid var(--registry-line);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .registry-panel-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--registry-line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .registry-panel-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--registry-ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .registry-panel-title i { color: var(--registry-teal); }
+
+    .btn-refresh {
+        border: 1px solid var(--registry-line);
+        background: var(--registry-canvas);
+        color: var(--registry-ink);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+    .btn-refresh:hover { background: #eef0f2; color: var(--registry-ink); }
+
+    .registry-table { margin-bottom: 0; }
+    .registry-table thead th {
+        background: var(--registry-canvas);
+        color: var(--registry-muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--registry-line);
+        border-top: none !important;
+        white-space: nowrap;
+    }
+    .registry-table tbody td {
+        padding: 14px 20px;
+        vertical-align: middle;
+        border-top: 1px solid var(--registry-line);
+        font-size: 13px;
+        color: var(--registry-ink);
+    }
+    .registry-table tbody tr:hover { background: var(--registry-canvas); }
+
+    .ref-id {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--registry-muted);
+    }
+
+    .alias-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+    }
+    .alias-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--registry-teal-soft);
+        color: var(--registry-teal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .token-value {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-size: 12px;
+        color: var(--registry-muted);
+        background: var(--registry-canvas);
+        padding: 3px 8px;
+        border-radius: 5px;
+        display: inline-block;
+    }
+    .token-missing {
+        color: var(--registry-rose);
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+    .pill::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .pill-clear { background: var(--registry-teal-soft); color: var(--registry-teal); }
+    .pill-clear::before { background: var(--registry-teal); }
+    .pill-flagged { background: var(--registry-rose-soft); color: var(--registry-rose); }
+    .pill-flagged::before { background: var(--registry-rose); }
+    .pill-high { background: var(--registry-rose-soft); color: var(--registry-rose); }
+    .pill-high::before { background: var(--registry-rose); }
+    .pill-medium { background: var(--registry-amber-soft); color: var(--registry-amber); }
+    .pill-medium::before { background: var(--registry-amber); }
+    .pill-low { background: #eef1f3; color: var(--registry-muted); }
+    .pill-low::before { background: var(--registry-muted); }
+
+    .date-cell { color: var(--registry-muted); font-size: 12.5px; }
+
+    .empty-state {
+        padding: 56px 20px;
+        text-align: center;
+    }
+    .empty-state i {
+        font-size: 34px;
+        color: #d5dae0;
+        margin-bottom: 10px;
+        display: block;
+    }
+    .empty-state p {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--registry-muted);
+        margin: 0;
+    }
+
+    .registry-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--registry-line);
+    }
+</style>
+
+<div class="content-wrapper" style="background: var(--registry-canvas);">
     {{-- Header Section --}}
-    <section class="content-header">
-        <h1>
-            Anonymous Conversations Registry
-            <small>Monitor ongoing guest identity tokens, risk evaluations, and telemetry logs</small>
-        </h1>
-        <ol class="breadcrumb">
-            <li><a href="{{ route('dashboard') }}"><i class="fa fa-dashboard"></i> Home</a></li>
-            <li class="active">Anonymous Registry</li>
-        </ol>
+    <section class="content-header" style="padding: 20px 20px 0 20px;">
+        <div class="registry-header">
+            <h1>
+                Anonymous Conversations Registry
+                <div class="registry-subtitle">Monitor ongoing guest identity tokens, risk evaluations, and telemetry logs</div>
+            </h1>
+            <ol class="breadcrumb">
+                <li><a href="{{ route('dashboard') }}"><i class="fa fa-dashboard"></i> Home</a></li>
+                <li class="active">Anonymous Registry</li>
+            </ol>
+        </div>
     </section>
 
     {{-- Main Content Window --}}
-    <section class="content">
+    <section class="content" style="padding: 0 20px 20px 20px;">
         @php
             // SAFETY FALLBACK CHECK: If your routing optimization cache acts up,
             // this guarantees the view has an instance to process without crashing out with a 500.
@@ -26,129 +273,112 @@
         @endphp
 
         {{-- Overview Analytics Cards --}}
-        <div class="row">
-            <div class="col-md-4 col-sm-6 col-xs-12">
-                <div class="info-box shadow">
-                    <span class="info-box-icon bg-aqua"><i class="fa fa-comments"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text">Total Conversations</span>
-                        <span class="info-box-number" style="font-size: 22px; font-weight: 600; margin-top: 4px;">
-                            {{ $conversations->total() }}
-                        </span>
-                    </div>
+        <div class="registry-stats">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa fa-comments"></i></div>
+                <div>
+                    <div class="stat-label">Total Conversations</div>
+                    <div class="stat-number">{{ $conversations->total() }}</div>
                 </div>
             </div>
 
-            <div class="col-md-4 col-sm-6 col-xs-12">
-                <div class="info-box shadow">
-                    <span class="info-box-icon bg-red"><i class="fa fa-flag"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text">Flagged Communications</span>
-                        <span class="info-box-number" style="font-size: 22px; font-weight: 600; margin-top: 4px;">
-                            {{ $conversations->where('is_flagged', true)->count() }}
-                        </span>
-                    </div>
+            <div class="stat-card stat-flagged">
+                <div class="stat-icon"><i class="fa fa-flag"></i></div>
+                <div>
+                    <div class="stat-label">Flagged Communications</div>
+                    <div class="stat-number">{{ $conversations->where('is_flagged', true)->count() }}</div>
                 </div>
             </div>
 
-            <div class="col-md-4 col-sm-12 col-xs-12">
-                <div class="info-box shadow">
-                    <span class="info-box-icon bg-yellow"><i class="fa fa-warning"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text">High Risk Signals</span>
-                        <span class="info-box-number" style="font-size: 22px; font-weight: 600; margin-top: 4px;">
-                            {{ $conversations->where('risk_level', 'high')->count() }}
-                        </span>
-                    </div>
+            <div class="stat-card stat-risk">
+                <div class="stat-icon"><i class="fa fa-warning"></i></div>
+                <div>
+                    <div class="stat-label">High Risk Signals</div>
+                    <div class="stat-number">{{ $conversations->where('risk_level', 'high')->count() }}</div>
                 </div>
             </div>
         </div>
 
         {{-- Core Registry Record Data Table --}}
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="box box-danger shadow" style="border-radius: 4px; overflow: hidden;">
-                    <div class="box-header with-border" style="background: #fff; padding: 15px;">
-                        <h3 class="box-title" style="font-weight: 600; color: #444;">
-                            <i class="fa fa-database text-red" style="margin-right: 5px;"></i> Active Schema Instances
-                        </h3>
-                        <div class="box-tools pull-right">
-                            <button type="button" class="btn btn-sm btn-default" onclick="window.location.reload();">
-                                <i class="fa fa-refresh"></i> Refresh Data Pool
-                            </button>
-                        </div>
-                    </div>
+        <div class="registry-panel">
+            <div class="registry-panel-header">
+                <h3 class="registry-panel-title">
+                    <i class="fa fa-database"></i> Active Schema Instances
+                </h3>
+                <button type="button" class="btn-refresh" onclick="window.location.reload();">
+                    <i class="fa fa-refresh"></i> Refresh
+                </button>
+            </div>
 
-                    <div class="box-body table-responsive no-padding" style="background: #fff;">
-                        <table class="table table-hover table-striped" style="margin-bottom: 0; vertical-align: middle;">
-                            <thead>
-                                <tr style="background-color: #fafafa; border-bottom: 2px solid #f4f4f4;">
-                                    <th style="padding: 12px 15px; width: 100px;" class="text-center">Ref ID</th>
-                                    <th style="padding: 12px 15px; width: 220px;">Assigned Alias Name</th>
-                                    <th style="padding: 12px 15px;">Secure Session Token</th>
-                                    <th style="padding: 12px 15px; width: 140px;" class="text-center">Flag Status</th>
-                                    <th style="padding: 12px 15px; width: 150px;" class="text-center">Risk Assessment</th>
-                                    <th style="padding: 12px 15px; width: 180px;">Created Date</th>
+            <div class="table-responsive no-padding">
+                <table class="table registry-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Ref ID</th>
+                            <th>Assigned Alias</th>
+                            <th>Secure Session Token</th>
+                            <th class="text-center">Flag Status</th>
+                            <th class="text-center">Risk</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if($conversations->count() > 0)
+                            @foreach($conversations as $conversation)
+                                <tr>
+                                    <td class="text-center ref-id">#{{ $conversation->id }}</td>
+                                    <td>
+                                        <div class="alias-cell">
+                                            <span class="alias-avatar"><i class="fa fa-user-secret"></i></span>
+                                            {{ $conversation->alias ?? 'Anonymous Client' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if(!empty($conversation->token))
+                                            <span class="token-value" title="{{ $conversation->token }}">{{ substr($conversation->token, 0, 24) }}&hellip;</span>
+                                        @else
+                                            <span class="token-missing"><i class="fa fa-exclamation-triangle"></i> Token unset or expired</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($conversation->is_flagged)
+                                            <span class="pill pill-flagged">Flagged</span>
+                                        @else
+                                            <span class="pill pill-clear">Clear</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($conversation->risk_level === 'high')
+                                            <span class="pill pill-high">High</span>
+                                        @elseif($conversation->risk_level === 'medium')
+                                            <span class="pill pill-medium">Medium</span>
+                                        @else
+                                            <span class="pill pill-low">Low</span>
+                                        @endif
+                                    </td>
+                                    <td class="date-cell">
+                                        {{ $conversation->created_at ? $conversation->created_at->format('d M Y, h:i A') : 'N/A' }}
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @if($conversations->count() > 0)
-                                    @foreach($conversations as $conversation)
-                                        <tr>
-                                            <td class="text-center" style="padding: 12px 15px; font-weight: 600; color: #777;">
-                                                #{{ $conversation->id }}
-                                            </td>
-                                            <td style="padding: 12px 15px; font-weight: 600; color: #3c8dbc;">
-                                                <i class="fa fa-user-secret" style="margin-right: 5px;"></i> {{ $conversation->alias ?? 'Anonymous Client' }}
-                                            </td>
-                                            <td style="padding: 12px 15px; font-family: monospace; font-size: 13px; color: #555;">
-                                                @if(!empty($conversation->token))
-                                                    <i class="fa fa-key text-muted" style="margin-right: 5px;"></i> <span title="{{ $conversation->token }}">{{ substr($conversation->token, 0, 24) }}...</span>
-                                                @else
-                                                    <span class="text-danger"><i class="fa fa-exclamation-triangle"></i> Token Unset/Expired</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center" style="padding: 12px 15px; vertical-align: middle;">
-                                                @if($conversation->is_flagged)
-                                                    <span class="label label-danger shadow-sm" style="font-size: 10px; font-weight: 700; padding: 3px 8px;">FLAGGED</span>
-                                                @else
-                                                    <span class="label label-success shadow-sm" style="font-size: 10px; font-weight: 700; padding: 3px 8px;">CLEAR</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center" style="padding: 12px 15px; vertical-align: middle;">
-                                                @if($conversation->risk_level === 'high')
-                                                    <span class="label label-danger" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">HIGH</span>
-                                                @elseif($conversation->risk_level === 'medium')
-                                                    <span class="label label-warning" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">MEDIUM</span>
-                                                @else
-                                                    <span class="label label-info" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">LOW</span>
-                                                @endif
-                                            </td>
-                                            <td style="padding: 12px 15px; color: #666; font-size: 13px;">
-                                                {{ $conversation->created_at ? $conversation->created_at->format('d M Y, h:i A') : 'N/A' }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted" style="padding: 40px 15px;">
-                                            <div style="font-size: 36px; color: #d2d6de; margin-bottom: 10px;">
-                                                <i class="fa fa-folder-open-o"></i>
-                                            </div>
-                                            <span style="font-size: 14px; font-weight: 600;">No tracked conversation pipelines found inside the database registries.</span>
-                                        </td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <i class="fa fa-folder-open-o"></i>
+                                        <p>No tracked conversation pipelines found inside the database registries.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
 
-                    {{-- Data Pagination Links Footer Section --}}
-                    <div class="box-footer clearfix" style="background: #fff; padding: 15px; border-top: 1px solid #f4f4f4;">
-                        <div class="no-margin pull-right">
-                            {{ $conversations->links() }}
-                        </div>
-                    </div>
+            {{-- Data Pagination Links Footer Section --}}
+            <div class="registry-footer clearfix">
+                <div class="pull-right">
+                    {{ $conversations->links() }}
                 </div>
             </div>
         </div>

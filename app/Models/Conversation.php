@@ -32,6 +32,7 @@ class Conversation extends Model
         'status',
         'is_flagged',
         'risk_level',
+        'is_human_request',
     ];
 
     /**
@@ -42,6 +43,7 @@ class Conversation extends Model
      */
     protected $casts = [
         'is_flagged' => 'boolean',
+        'is_human_request' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -50,7 +52,7 @@ class Conversation extends Model
      * Get the messages associated with this tracked interaction pipeline.
      * Defines strict one-to-many relationship mapping back to structural message threads.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    * @return HasMany
      */
     public function messages(): HasMany
     {
@@ -60,7 +62,7 @@ class Conversation extends Model
     /**
      * Get the historical session timeline tracking indices for this conversation.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    * @return HasMany
      */
     public function logs(): HasMany
     {
@@ -71,7 +73,7 @@ class Conversation extends Model
      * Get the administrative counselor profile assigned to guide this chat pipeline session.
      * Maps back securely directly to the system users collection table schema.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+    * @return BelongsTo
      */
     public function counselor(): BelongsTo
     {

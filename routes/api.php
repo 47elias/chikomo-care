@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\FeaturesController;
 use App\Http\Controllers\ClientChatRequestController;
+use App\Http\Controllers\Api\FeaturesController as ChatFeaturesController;
 
 // Authentication
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -34,4 +35,4 @@ Route::controller(FeaturesController::class)->group(function () {
 
 // Client Chat Request Pipeline
 // Note: If this file is already in routes/api.php, the path should be '/conversations/create'
-Route::post('/conversations/create', [ClientChatRequestController::class, 'store'])->name('api.conversations.create');
+Route::post('/conversations/create', [FeaturesController::class, 'requestCounselor']);
