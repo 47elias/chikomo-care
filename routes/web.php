@@ -14,6 +14,10 @@ use App\Http\Controllers\StressModuleController;
 use App\Http\Controllers\Api\FeaturesController;
 use Illuminate\Auth\Events\Login;
 use App\Models\Counselor;
+use App\Http\Controllers\CareController;
+use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\SessionController;
+use Illuminate\Http\Request;
 
 //Cache Clearing Route and Optimization
 Route::get('/laravel-optimization-clear', function () {
@@ -21,21 +25,49 @@ Route::get('/laravel-optimization-clear', function () {
     return 'All caches have been cleared successfully!';
 });
 
-// Catch-all route to ensure React handles the routing
-Route::get('/', function () {
-    return view('app');
+// Public Blade pages and their CSRF-protected form actions.
+Route::name('care.')->controller(CareController::class)->group(function () {
+    Route::get('/', 'chat')->name('chat');
+    Route::post('/chat/send', 'send')->name('chat.send');
+    Route::post('/care/session/restore', 'restoreSession')->name('session.restore');
+    Route::post('/care/conversations/{conversation}/select', 'selectConversation')->name('conversations.select');
+    Route::get('/counselor-chat', 'counselor')->name('counselor');
+    Route::get('/counselor-chat/sync', 'counselorSync')->name('counselor.sync');
+    Route::post('/counselor-chat/request', 'requestCounselor')->name('counselor.request');
+    Route::post('/counselor-chat/send', 'sendCounselor')->name('counselor.send');
+    // /stress-modules and /peer-stories already serve the authenticated admin pages.
+    Route::get('/care/stress-modules', 'modules')->name('modules');
+    Route::post('/care/stress-modules/{module}/download', 'download')->name('modules.download');
+    Route::post('/care/stress-modules/{module}/comments', 'comment')->name('modules.comment');
+    Route::get('/care/peer-stories', 'stories')->name('stories');
+    Route::post('/care/peer-stories', 'postStory')->name('stories.post');
+});
+
+// Keep existing JSON URLs available, with every HTTP route defined in this file.
+// These endpoints now use web middleware; POST requests require a CSRF token.
+Route::prefix('api')->group(function () {
+    Route::middleware('auth:sanctum')->get('/user', fn (Request $request) => $request->user());
+    Route::post('/session/init', [SessionController::class, 'initialize']);
+    Route::post('/chat/send', [ChatController::class, 'store']);
+    Route::get('/chat/history', [ChatController::class, 'history']);
+    Route::get('/conversations', [ChatController::class, 'index']);
+    Route::get('/stress-modules', [FeaturesController::class, 'getStressModules']);
+    Route::get('/peer-stories', [FeaturesController::class, 'getPeerStories']);
+    Route::post('/peer-stories/post', [FeaturesController::class, 'postPeerStory']);
+    Route::get('/counselor/status', [FeaturesController::class, 'checkCounselorStatus']);
+    Route::get('/counselor/history', [FeaturesController::class, 'getCounselorHistory']);
+    Route::post('/counselor/request', [FeaturesController::class, 'requestCounselor']);
+    Route::post('/conversations/create', [FeaturesController::class, 'requestCounselor'])->name('api.conversations.create');
 });
 Route::get('/admin', function () {
     return view('admin.login');
 });
-Route::post('/api/conversations/create', [FeaturesController::class, 'requestCounselor'])->name('api.conversations.create');
 //login route
 Route::get('login', [LoginController::class, 'show'])->name('login');
-Route::post('login', [LoginController::class, 'authenticate'])->name('login');
+Route::post('login', [LoginController::class, 'authenticate'])->name('login.authenticate');
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('dashboard', function () { return view('admin.dashboard'); })->middleware('auth')->name('dashboard');
-Route::get('/counsillors', function () { $counselors = Counselor::with('user')->get(); return view('admin.counsillor_directory', compact('counselors'));})->name('counsillors.index')->middleware(['web', 'auth']);
 Route::post('/counselors/store', [CounselorController::class, 'store'])->name('counselors.store');
 Route::get('/counsillors', [CounselorController::class, 'index'])->name('counsillors.index')->middleware('auth');
 Route::get('/counsillor_log', [CounselorController::class, 'assignmentLogs'])->name('counsillor_log');
