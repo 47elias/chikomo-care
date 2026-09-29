@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') · Chikomo Care</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <!-- Tailwind CSS Play CDN (No Node.js or Vite required) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Standard Static Assets (Place your files in public/css and public/js) -->
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="{{ asset('js/app.js') }}" defer></script>
 </head>
 <body class="care-app" data-restore-url="{{ route('care.session.restore') }}">
     <div class="care-shell">
